@@ -34,7 +34,7 @@ void TestTimestampBoundaries() {
     db.Put({"id2", "O>>-<", "general2", ts2, 1000});
 
     int count = 0;
-    db.RangeByTimestamp(ts1, ts2, [&count](const Record&) {
+    db.RangeByTimestamp(ts1, ts2, [&count](const Record& r) {
         ++count;
         return true;
     });
@@ -77,11 +77,30 @@ void TestReplacement() {
     ASSERT_EQUAL(final_body, record->title);
 }
 
+void TestGetById() {
+    Database db;
+    db.Put({"id", "Have a hand", "admin", 1536107260, 10});
+
+    auto record = db.GetById("id");
+    ASSERT(record != nullptr);
+    ASSERT_EQUAL("Have a hand", record->title);
+}
+
+void TestPut() {
+    Database db;
+    bool isInserted = db.Put({"id", "Have a hand", "admin", 1536107260, 10});
+    ASSERT(isInserted);
+    isInserted = db.Put({"id", "Have a hand", "admin", 1536107260, 10});
+    ASSERT(!isInserted);
+}
+
 int main() {
     TestRunner tr;
     RUN_TEST(tr, TestRangeBoundaries);
     RUN_TEST(tr, TestSameUser);
     RUN_TEST(tr, TestTimestampBoundaries);
     RUN_TEST(tr, TestReplacement);
+    RUN_TEST(tr, TestGetById);
+    RUN_TEST(tr, TestPut);
     return 0;
 }

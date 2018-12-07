@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <map>
+#include <list>
 
 #include <iostream>
 
@@ -23,32 +24,34 @@ struct Record {
 class Database {
 public:
     bool Put(const Record& record) {
-        const auto [it, wasInserted] = db_.insert({record.id, record});
-        if (wasInserted) {
-            UpdateIndices(record);
+        if (id_index.find(record.id) == id_index.end()) {
+            const auto new_rec_it = storage_.insert(storage_.end(), record);
+            id_index[record.id] = new_rec_it;
+
+            UpdateIndices(record, new_rec_it);
+            return true;
         }
 
-        return wasInserted;
+        return false;
     };
 
     const Record* GetById(const string& id) const {
         try {
-            return &db_.at(id);
+            return &(*id_index.at(id));
         } catch(exception& ex) {
             return nullptr;
         }
     };
 
     bool Erase(const string& id) {
-        const auto& r = db_.find(id);
-
-        if (r == db_.end()) {
+        const auto r_it = id_index.find(id);
+        if (r_it == id_index.end()) {
             return false;
         }
 
-        RemoveIndices((*r).second);
-
-        db_.erase(r);
+        RemoveIndices(*(*r_it).second,(*r_it).second);
+        storage_.erase((*r_it).second);
+        id_index.erase(id);
 
         return true;
     };
@@ -58,9 +61,9 @@ public:
         auto lower_bound = timestamp_index.lower_bound(low);
         auto upper_bound = timestamp_index.upper_bound(high);
         for (auto it = lower_bound; it != upper_bound; ++it) {
-            const auto& ids = (*it).second;
-            for ( auto id : ids) {
-                bool fetchNext = callback(*GetById(id));
+            const auto& rec_ptrs = (*it).second;
+            for ( auto rec_ptr : rec_ptrs) {
+                bool fetchNext = callback(*rec_ptr);
 
                 if (!fetchNext) {
                     return;
@@ -74,9 +77,9 @@ public:
         auto lower_bound = karma_index.lower_bound(low);
         auto upper_bound = karma_index.upper_bound(high);
         for (auto it = lower_bound; it != upper_bound; ++it) {
-            const auto& ids = (*it).second;
-            for ( auto id : ids) {
-                bool fetchNext = callback(*GetById(id));
+            const auto& rec_ptrs = (*it).second;
+            for ( auto rec_ptr : rec_ptrs) {
+                bool fetchNext = callback(*rec_ptr);
 
                 if (!fetchNext) {
                     return;
@@ -88,8 +91,8 @@ public:
     template <typename Callback>
     void AllByUser(const string& user, const Callback& callback) const {
         try {
-            for (auto id: user_index.at(user)) {
-                bool fetchNext = callback(*GetById(id));
+            for (auto rec_ptr: user_index.at(user)) {
+                bool fetchNext = callback(*rec_ptr);
 
                 if (!fetchNext) {
                     return;
@@ -101,20 +104,22 @@ public:
     };
 
 private:
-    void UpdateIndices(const Record& r) {
-        karma_index[r.karma].insert(r.id);
-        timestamp_index[r.timestamp].insert(r.id);
-        user_index[r.user].insert(r.id);
+    void UpdateIndices(const Record& r, list<Record>::iterator it) {
+         karma_index[r.karma].insert(&(*it));
+         timestamp_index[r.timestamp].insert(&(*it));
+        user_index[r.user].insert(&(*it));
     }
 
-    void RemoveIndices(const Record& r) {
-        karma_index[r.karma].erase(r.id);
-        timestamp_index[r.timestamp].erase(r.id);
-        user_index[r.user].erase(r.id);
+    void RemoveIndices(const Record& r, list<Record>::iterator it) {
+         karma_index[r.karma].erase(&(*it));
+         timestamp_index[r.timestamp].erase(&(*it));
+        user_index[r.user].erase(&(*it));
     }
 
+    list<Record> storage_ = {};
     unordered_map<ID, Record> db_ = {};
-    unordered_map<User, unordered_set<ID>> user_index = {};
-    map<Karma, unordered_set<ID>> karma_index = {};
-    map<Timestamp, unordered_set<ID>> timestamp_index{};
+    unordered_map<ID, list<Record>::iterator> id_index = {};
+    unordered_map<User, unordered_set<Record*>> user_index = {};
+    map<Karma, unordered_set<Record*>> karma_index = {};
+    map<Timestamp, unordered_set<Record*>> timestamp_index{};
 };
