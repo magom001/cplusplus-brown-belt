@@ -25,11 +25,13 @@ public:
 
     UniquePtr &operator=(nullptr_t t) {
         ptr_ = t;
+        return this;
     };
 
     UniquePtr &operator=(UniquePtr &&other) {
         ptr_ = other.ptr_;
         other.ptr_ = nullptr;
+        return this;
     };
 
     ~UniquePtr() {
