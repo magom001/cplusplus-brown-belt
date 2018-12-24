@@ -5,7 +5,7 @@
 
 using namespace std;
 
-Bus::Bus(std::string &&bus_number) : bus_number(bus_number) {}
+Bus::Bus(string &&bus_number) : bus_number(bus_number) {}
 
 const string &Bus::GetBusNumber() const {
     return this->bus_number;
@@ -65,4 +65,8 @@ ostream& operator<<(ostream& os, Bus& bus) {
        << "\n";
 
     return os;
+}
+
+bool operator<(const Bus b1, const Bus b2) {
+    return b1.GetBusNumber() < b2.GetBusNumber();
 }

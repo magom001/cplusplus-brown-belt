@@ -15,7 +15,8 @@ public:
 public:
     void InsertBusItinerary(std::istream& is);
     void InsertStop(std::istream& is);
-    const std::shared_ptr<Bus> TryGetBus(std::string_view bus_number) const;
+    const std::shared_ptr<Bus> TryGetBus(std::string_view) const;
+    const std::shared_ptr<Stop> TryGetStop(std::string_view) const;
     std::shared_ptr<Stop> GetStop(std::string_view stop_name);
     size_t GetNumberOfStops() const;
     size_t GetNumberOfBusRoutes() const;

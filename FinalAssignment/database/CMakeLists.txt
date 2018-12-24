@@ -6,13 +6,15 @@ set(HEADER_FILES
         bus.h
         parse.h
         global.h
-        stop.h)
+        stop.h
+        program_runner.h
+        )
 
 set(SOURCE_FILES
         database.cpp
         bus.cpp
         parse.cpp
         stop.cpp
-        program_runner.h)
+        )
 
 add_library(database STATIC ${SOURCE_FILES} ${HEADER_FILES})

@@ -10,12 +10,21 @@ Database::Database() {
 }
 
 size_t Database::GetNumberOfStops() const { return stops.size(); }
+
 size_t Database::GetNumberOfBusRoutes() const { return bus_routes.size(); }
 
 const shared_ptr<Bus> Database::TryGetBus(string_view bus_number) const {
     try {
         return bus_routes.at(string(Strip(bus_number)));
-    } catch(...) {
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+const std::shared_ptr<Stop> Database::TryGetStop(std::string_view stop_name) const {
+    try {
+        return stops.at(string(Strip(stop_name)));
+    } catch (...) {
         return nullptr;
     }
 }
@@ -23,7 +32,7 @@ const shared_ptr<Bus> Database::TryGetBus(string_view bus_number) const {
 shared_ptr<Bus> Database::GetBus(string_view bus_number) {
     try {
         return bus_routes.at(string(Strip(bus_number)));
-    } catch(...) {
+    } catch (...) {
         string number(Strip(bus_number));
 
         auto bus_ptr = make_shared<Bus>(move(number));
@@ -36,7 +45,7 @@ shared_ptr<Bus> Database::GetBus(string_view bus_number) {
 shared_ptr<Stop> Database::GetStop(string_view stop_name) {
     try {
         return stops.at(string(Strip(stop_name)));
-    } catch(...) {
+    } catch (...) {
         string name(Strip(stop_name));
 
         auto stop_ptr = make_shared<Stop>(move(name));
@@ -58,21 +67,23 @@ void Database::InsertBusItinerary(istream &is) {
     const char delimiter = (stop_names).find('>') != string::npos ? '>' : '-';
 
     // Кольцевой маршрут вводится с '>', некольцевой с '-'
-    if(delimiter == '>') {
+    if (delimiter == '>') {
         bus_ptr->SetIsCyclic(true);
     }
 
     auto bus_names = SplitBy(stop_names, delimiter);
     vector<shared_ptr<Stop>> stops(bus_names.size());
-    transform(bus_names.begin(), bus_names.end(), stops.begin(), [this](string_view s){
-       return GetStop(s);
+    transform(bus_names.begin(), bus_names.end(), stops.begin(), [this, &bus_ptr](string_view s) {
+        auto stop_ptr = GetStop(s);
+        stop_ptr->AddBus(bus_ptr->GetBusNumber());
+        return stop_ptr;
     });
 
     bus_ptr->SetBusStops(move(stops));
 };
 
 
-void Database::InsertStop(istream& is) {
+void Database::InsertStop(istream &is) {
     string stop_name;
     getline(is, stop_name, ':');
     auto stop_ptr = GetStop(stop_name);

@@ -6,6 +6,9 @@
 #include <memory>
 #include "stop.h"
 
+class Stop;
+class Bus;
+
 class Bus {
 public:
     Bus(std::string&& bus_number);
@@ -23,3 +26,4 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, Bus& bus);
+bool operator<(const Bus, const Bus);

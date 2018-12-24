@@ -32,6 +32,17 @@ void HandleDbRequests(istream& is, ostream &os, Database& db) {
         } else {
             os << "Bus " << Strip(bus_number) << ": not found\n";
         }
+    } else if (op_code == "Stop") {
+        string stop_name;
+        getline(is, stop_name);
+
+        auto stop_ptr = db.TryGetStop(stop_name);
+
+        if(stop_ptr) {
+            os << *stop_ptr;
+        } else {
+            os << "Stop " << Strip(stop_name) << ": not found\n";
+        }
     }
 }
 
