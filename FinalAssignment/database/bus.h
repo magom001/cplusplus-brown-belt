@@ -8,29 +8,18 @@
 
 class Bus {
 public:
-    Bus() = delete;
-    Bus(std::string_view bus_number);
-    Bus(std::string_view bus_number, std::vector<std::shared_ptr<Stop>>&& stops);
-
-    const std::string_view GetBusNumber() const;
-
-    const std::vector<std::shared_ptr<Stop>> GetStops() const;
-    void SetStops(std::vector<std::shared_ptr<Stop>>&& stops);
-
-    double CalculateItineraryDistance();
-
+    Bus(std::string&& bus_number);
+    const std::string& GetBusNumber() const;
+    double CalculateRouteDistance() const;
+    void SetBusStops(std::vector<std::shared_ptr<Stop>>&& stops);
+    const bool IsCyclic() const;
+    void SetIsCyclic(bool flag);
     size_t GetNumberOfStops() const;
-
-    size_t GetNumberOfUniqueStops();
-
+    size_t GetNumberOfUniqueStops() const;
 private:
-    std::string_view bus_number;
-    std::vector<std::shared_ptr<Stop>> stops;
-    double itinerary_distance ;
     bool is_cyclic = false;
-    size_t unique_stops;
+    std::string bus_number;
+    std::vector<std::shared_ptr<Stop>> bus_stops;
 };
 
 std::ostream& operator<<(std::ostream& os, Bus& bus);
-
-std::vector<std::string_view> GetStopNames(std::string_view sv);

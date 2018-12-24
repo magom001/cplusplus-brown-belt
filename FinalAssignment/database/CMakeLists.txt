@@ -2,19 +2,17 @@ project(database)
 set(CMAKE_CXX_STANDARD 17)
 
 set(HEADER_FILES
-        stop.h
-        bus.h
         database.h
-        iterator_range.h
+        bus.h
         parse.h
-        program_runner.h
-        )
+        global.h
+        stop.h)
 
 set(SOURCE_FILES
-        stop.cpp
-        bus.cpp
         database.cpp
+        bus.cpp
         parse.cpp
-        )
+        stop.cpp
+        program_runner.h)
 
 add_library(database STATIC ${SOURCE_FILES} ${HEADER_FILES})

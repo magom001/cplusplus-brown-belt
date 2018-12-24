@@ -1,31 +1,28 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <iostream>
+#include <cmath>
+#include "global.h"
 
-#define PI 3.1415926535
-#define EARTH_RADIUS 6371000.0
-#define RAD PI/180.0
+struct Coordinates {
+    double latitude;
+    double longitude;
+};
 
-using latitude=double;
-using longitude=double;
+std::istream& operator>>(std::istream& is, Coordinates& coordinates);
 
-struct Stop {
+class Stop {
+public:
     Stop() = default;
-    Stop(std::string_view name);
-    Stop(std::string_view name, latitude lat, longitude lon);
-    std::string name;
-    latitude lat;
-    longitude lon;
+    Stop(std::string&& stop_name);
+    Stop(std::string&& stop_name, double latitude, double longitude);
+    const std::string GetName() const;
+    void SetCoordinates(Coordinates&& coords);
+    const Coordinates& GetCoordinates() const;
+private:
+    std::string stop_name;
+    Coordinates coordinates;
 };
 
-bool operator==(const Stop& stop1, const Stop& stop2);
-bool operator<(const Stop& stop1, const Stop& stop2);
-std::istream& operator>>(std::istream& is, Stop& stop);
-
-struct StopHasher {
-    size_t operator()(Stop const& s) const;
-};
-
-double CalculateDistanceBetweenTwoStops(const Stop& stop1, const Stop& stop2);
+double CalculateDistanceBetweenTwoStops(const Coordinates &pt1, const Coordinates &pt2);

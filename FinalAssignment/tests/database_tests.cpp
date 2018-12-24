@@ -1,65 +1,73 @@
 #include <catch2/catch.hpp>
-
+#include <sstream>
 #include "database.h"
-#include <string_view>
-#include "bus.h"
-#include <vector>
-#include <memory>
 
 using namespace std;
 
-TEST_CASE( "Database tests" ) {
-    SECTION ( "database stores correctly shared pointers to stops") {
+TEST_CASE("Database tests") {
+    SECTION("GetStop must always return the same pointer") {
         Database db;
-        auto stop1_ptr = make_shared<Stop>("stop#001");
-        db.AddStop(move(stop1_ptr));
-        auto found_stop1 = db.GetStop("stop#001");
-        REQUIRE(found_stop1 != nullptr);
-        CHECK(found_stop1->name == "stop#001");
-        CHECK(found_stop1->lat == 0.0);
-        CHECK(found_stop1->lon == 0.0);
+        auto ptr_1 = db.GetStop("stop");
+        auto ptr_2 = db.GetStop("stop");
+
+        //REQUIRE(ptr_1 == ptr_2);
+        REQUIRE(ptr_1->GetName() == "stop");
+        REQUIRE(ptr_1->GetName() == "stop");
+        REQUIRE(db.GetNumberOfStops() == 1);
     }
-    SECTION ( "should create a new stop or update the object managed by a smart pointer" ) {
+    SECTION("GetStop should ignore white space") {
         Database db;
-        vector<shared_ptr<Stop>> stops;
-        auto stop1_ptr = make_shared<Stop>("stop#001");
-        auto temp = db.AddStop(move(stop1_ptr));
-        stops.push_back(move(temp));
-        auto found_stop1 = db.GetStop("stop#001");
-        REQUIRE(found_stop1 != nullptr);
-        CHECK(found_stop1->name == "stop#001");
-        CHECK(found_stop1->lat == 0.0);
-        CHECK(found_stop1->lon == 0.0);
+        auto ptr_1 = db.GetStop("stop with many words in name");
+        auto ptr_2 = db.GetStop("   stop with many words in name       ");
 
-        auto new_stop1_ptr = make_shared<Stop>("stop#001", 1.0, 1.0);
-        db.AddStop(new_stop1_ptr);
-        REQUIRE(stops.size() == 1);
-        CHECK(stops[0]->name == "stop#001");
-        CHECK(stops[0]->lat == 1.0);
+        REQUIRE(db.GetNumberOfStops() == 1);
 
-        auto another_get_call = db.GetStop("stop#001");
-        REQUIRE(another_get_call->lat == 1.0);
-        REQUIRE(another_get_call->lon == 1.0);
+        CHECK(ptr_1.get() == ptr_2.get());
+        CHECK(ptr_1 == ptr_2);
+        REQUIRE(ptr_1->GetName() == "stop with many words in name");
+        REQUIRE(ptr_1->GetName() == "stop with many words in name");
     }
-    SECTION ( "add a bus") {
+    SECTION("Stop must be unique") {
         Database db;
-        string bus_number = "bus#001";
+        auto ptr_1 = db.GetStop("   Marushkino");
+        stringstream ss(" Marushkino: 55.595884, 37.209755\n");
+        db.InsertStop(ss);
 
-        vector<string_view> stop_names = {"stop_1", "stop_2", "stop_3"};
-        auto bus_ptr = db.AddBus(bus_number, move(stop_names));
-        CHECK(bus_ptr->GetBusNumber() == "bus#001");
+        auto ptr_2 = db.GetStop("Marushkino ");
+        REQUIRE(ptr_1 == ptr_2);
+        REQUIRE(ptr_1->GetCoordinates().latitude == Approx(55.595884).epsilon(0.0001));
+        REQUIRE(ptr_1->GetCoordinates().longitude == Approx(37.209755).epsilon(0.0001));
+        REQUIRE(db.GetNumberOfStops() == 1);
+    }
+    SECTION("Should handle correctly bus routes") {
+        Database db;
+        stringstream ss(" 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye\n");
+        db.InsertBusItinerary(ss);
 
-        auto bus1_stops = bus_ptr->GetStops();
-        CHECK(bus1_stops.size() == 3);
-        CHECK(bus1_stops[0]->lat == 0);
-        CHECK(bus1_stops[0]->lon == 0);
+        REQUIRE(db.GetNumberOfStops() == 5);
+        REQUIRE(db.GetNumberOfBusRoutes() == 1);
 
-        auto stop = make_shared<Stop>("stop_1", 99, 100);
-        db.AddStop(stop);
+        ss.clear();
+        ss.str("750: Tolstopaltsevo - Marushkino - Rasskazovka\n");
+        db.InsertBusItinerary(ss);
 
-        CHECK(bus1_stops[0]->lat == 99);
-        CHECK(bus1_stops[0]->lon == 100);
-        CHECK(bus1_stops[1]->lat == 0);
-        CHECK(bus1_stops[1]->lon == 0);
+        REQUIRE(db.GetNumberOfBusRoutes() == 2);
+        REQUIRE(db.GetNumberOfStops() == 8);
+
+        ss.clear();
+        ss.str("  weird bus name  : Tolstopaltsevo - Marushkino - Rasskazovka\n");
+        db.InsertBusItinerary(ss);
+
+        REQUIRE(db.GetNumberOfBusRoutes() == 3);
+        REQUIRE(db.GetNumberOfStops() == 8);
+
+        ss.clear();
+        ss.str(" Marushkino: 55.595884, 37.209755\n");
+        db.InsertStop(ss);
+
+        auto stop_ptr = db.GetStop("Marushkino");
+
+        REQUIRE(stop_ptr->GetCoordinates().latitude == Approx(55.595884).epsilon(0.0001));
+        REQUIRE(stop_ptr->GetCoordinates().longitude == Approx(37.209755).epsilon(0.0001));
     }
 }

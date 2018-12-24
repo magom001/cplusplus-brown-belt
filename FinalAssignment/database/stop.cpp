@@ -1,37 +1,33 @@
 #include "stop.h"
-#include "parse.h"
-#include <cmath>
 
 using namespace std;
 
-Stop::Stop(string_view name): name(name), lat(0.0), lon(0.0){}
-Stop::Stop(string_view name, latitude lat, longitude lon): name(name), lat(lat), lon(lon){}
+Stop::Stop(string &&stop_name) : stop_name(stop_name), coordinates({0.0, 0.0}) {}
+Stop::Stop(std::string&& stop_name, double latitude, double longitude) : stop_name(stop_name), coordinates({latitude, longitude}) {}
 
-bool operator==(const Stop &stop1, const Stop &stop2) {
-    return stop1.name == stop2.name;
+const string Stop::GetName() const {
+    return this->stop_name;
 }
 
-bool operator<(const Stop &stop1, const Stop &stop2) {
-    return stop1.name < stop2.name;
+const Coordinates &Stop::GetCoordinates() const {
+    return coordinates;
 }
 
-istream &operator>>(istream &is, Stop &stop) {
-    string name;
-    getline(is, name, ':');
-    stop.name = Strip(name);
-    is >> stop.lat;
-    is.ignore(1);
-    is >> stop.lon;
+void Stop::SetCoordinates(Coordinates &&coords) {
+    coordinates = coords;
+}
+
+
+istream &operator>>(istream &is, Coordinates &coordinates) {
+    string latitude, longitude;
+    getline(is, latitude, ',');
+    coordinates.latitude = stod(latitude);
+    is >> coordinates.longitude;
     return is;
 }
 
-
-size_t StopHasher::operator()(Stop const &s) const {
-    return std::hash<std::string>()(s.name);
-}
-
-
-double CalculateDistanceBetweenTwoStops(const Stop &stop1, const Stop &stop2) {
-    return acos(sin(stop1.lat * RAD) * sin(stop2.lat * RAD) +
-                cos(stop1.lat * RAD) * cos(stop2.lat * RAD) * cos(stop1.lon * RAD - stop2.lon * RAD)) * EARTH_RADIUS;
+double CalculateDistanceBetweenTwoStops(const Coordinates &pt1, const Coordinates &pt2) {
+    return acos(sin(pt1.latitude * RAD) * sin(pt2.latitude * RAD) +
+                cos(pt1.latitude * RAD) * cos(pt2.latitude * RAD) * cos(abs(pt1.longitude * RAD - pt2.longitude * RAD))) *
+                EARTH_RADIUS;
 }

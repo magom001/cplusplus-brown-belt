@@ -5,88 +5,64 @@
 
 using namespace std;
 
-Bus::Bus(std::string_view bus_number)
-        : bus_number(bus_number),
-        itinerary_distance(0),
-        unique_stops(0) {}
+Bus::Bus(std::string &&bus_number) : bus_number(bus_number) {}
 
+const string &Bus::GetBusNumber() const {
+    return this->bus_number;
+}
 
-Bus::Bus(string_view bus_number, vector<shared_ptr<Stop>> &&stops)
-        : bus_number(bus_number),
-          stops(stops),
-          itinerary_distance(0),
-          unique_stops(0) {
-    if (this->stops.front() == this->stops.back()) {
-        is_cyclic = true;
+double Bus::CalculateRouteDistance() const {
+    if (bus_stops.size() < 2) {
+        return 0.0;
     }
-}
 
-const string_view Bus::GetBusNumber() const {
-    return bus_number;
-}
+    double distance = 0.0;
 
-const vector<shared_ptr<Stop>> Bus::GetStops() const {
-    return stops;
-}
-
-void Bus::SetStops(vector<std::shared_ptr<Stop>>&& stops) {
-    this->stops = move(stops);
-    if (this->stops.front() == this->stops.back()) {
-        is_cyclic = true;
+    for (auto it = next(bus_stops.begin()); it != bus_stops.end(); ++it) {
+        distance += CalculateDistanceBetweenTwoStops((*prev(it))->GetCoordinates(), (*it)->GetCoordinates());
     }
+
+    return IsCyclic() ? distance : distance * 2.0;
 }
 
 size_t Bus::GetNumberOfStops() const {
-    if (is_cyclic) {
-        return stops.size();
+    if (IsCyclic()) {
+        return bus_stops.size();
     }
 
-    return stops.size() * 2 - 1;
+    return bus_stops.size() * 2 - 1;
 }
 
-size_t Bus::GetNumberOfUniqueStops() {
-    if (GetNumberOfStops() > 0 && unique_stops == 0) {
-        unordered_set<shared_ptr<Stop>> temp(stops.begin(), stops.end());
-        unique_stops = temp.size();
-    }
-
-    return unique_stops;
+size_t Bus::GetNumberOfUniqueStops() const {
+    unordered_set<shared_ptr<Stop>> temp(bus_stops.begin(), bus_stops.end());
+    return temp.size();
 }
 
-double Bus::CalculateItineraryDistance() {
-    if (stops.size() < 2) {
-        return 0;
-    }
-
-    for (auto it = next(stops.begin()); it != stops.end(); ++it) {
-        itinerary_distance += CalculateDistanceBetweenTwoStops(**prev(it), **it);
-    }
-
-    if (!is_cyclic) {
-        itinerary_distance *= 2.0;
-    }
-
-    return itinerary_distance;
+void Bus::SetIsCyclic(bool flag) {
+    is_cyclic = flag;
 }
 
-std::ostream& operator<<(std::ostream& os, Bus& bus) {
+const bool Bus::IsCyclic() const {
+    return is_cyclic;
+}
+
+void Bus::SetBusStops(vector<shared_ptr<Stop>> &&stops) {
+    bus_stops = stops;
+}
+
+ostream& operator<<(ostream& os, Bus& bus) {
     os << "Bus "
-        << bus.GetBusNumber()
-        << ": "
-        << bus.GetNumberOfStops()
-        << " stops on route, "
-        << bus.GetNumberOfUniqueStops()
-        << " unique stops, "
-        << setprecision(6)
-        << fixed
-        << bus.CalculateItineraryDistance()
-        << " route length"
-        << "\n";
-    return os;
-}
+       << bus.GetBusNumber()
+       << ": "
+       << bus.GetNumberOfStops()
+       << " stops on route, "
+       << bus.GetNumberOfUniqueStops()
+       << " unique stops, "
+       << setprecision(6)
+       << fixed
+       << bus.CalculateRouteDistance()
+       << " route length"
+       << "\n";
 
-vector<string_view> GetStopNames(string_view sv) {
-    // Limit search to 30 characters
-    const char ch = sv.find('>') != sv.npos ? '>' : '-';
-    return SplitBy(sv, ch);
+    return os;
 }

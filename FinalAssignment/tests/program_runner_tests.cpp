@@ -6,13 +6,14 @@
 using namespace std;
 
 TEST_CASE( "Program runner tests" ) {
-    SECTION ( " test default case ") {
+    SECTION (" test default case ") {
         stringstream iss;
         stringstream oss;
         iss << 10 << "\n";
         iss << "Stop Tolstopaltsevo: 55.611087, 37.20829\n";
         iss << "Stop Marushkino: 55.595884, 37.209755\n";
-        iss << "Bus 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye\n";
+        iss
+                << "Bus 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye\n";
         iss << "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka\n";
         iss << "Stop Rasskazovka: 55.632761, 37.333324\n";
         iss << "Stop Biryulyovo Zapadnoye: 55.574371, 37.6517\n";
@@ -35,17 +36,19 @@ TEST_CASE( "Program runner tests" ) {
         CHECK(oss.str() == expected_output.str());
     }
 
-    SECTION ( " test without space in input case ") {
+    SECTION (" test without space in input case ") {
         stringstream iss;
         stringstream oss;
         iss << 12 << "\n";
         iss << "Stop    Tolstopaltsevo   : 55.611087, 37.20829\n";
         iss << "Stop Marushkino: 55.595884, 37.209755    \n";
-        iss << "Bus    256   :Biryulyovo Zapadnoye>Biryusinka>Universam>      Biryulyovo Tovarnaya        >Biryulyovo Passazhirskaya>Biryulyovo Zapadnoye\n";
+        iss
+                << "Bus    256   :Biryulyovo Zapadnoye>Biryusinka>Universam>      Biryulyovo Tovarnaya        >Biryulyovo Passazhirskaya>Biryulyovo Zapadnoye\n";
         iss << "Bus    750   : Tolstopaltsevo-Marushkino-Rasskazovka\n";
-        iss << "Bus    751   :Biryulyovo Zapadnoye>Biryusinka>Universam>      Biryulyovo Tovarnaya        >Biryulyovo Passazhirskaya>Biryulyovo Zapadnoye\n";
+        iss
+                << "Bus    751   :Biryulyovo Zapadnoye>Biryusinka>Universam>      Biryulyovo Tovarnaya        >Biryulyovo Passazhirskaya>Biryulyovo Zapadnoye\n";
         iss << "Stop Rasskazovka: 55.632761, 37.333324\n";
-        iss << "Stop Biryulyovo Zapadnoye: 55.574371, 37.6517\n";
+        iss << "Stop Biryulyovo Zapadnoye: 55.574371  , 37.6517\n";
         iss << "Stop Biryusinka:55.581065,37.64839\n";
         iss << "Stop Universam:     55.587655,    37.645687    \n";
         iss << "Stop Biryulyovo Tovarnaya: 55.592028, 37.653656\n";
