@@ -19,10 +19,26 @@ double Bus::CalculateRouteDistance() const {
     double distance = 0.0;
 
     for (auto it = next(bus_stops.begin()); it != bus_stops.end(); ++it) {
-        distance += CalculateDistanceBetweenTwoStops((*prev(it))->GetCoordinates(), (*it)->GetCoordinates());
+        distance += CalculateDistanceBetweenCoordinates((*prev(it))->GetCoordinates(), (*it)->GetCoordinates());
     }
 
     return IsCyclic() ? distance : distance * 2.0;
+}
+
+const Distance Bus::CalculateDistance() const {
+    Distance d;
+
+    for (auto stop = bus_stops.begin(), nextStop = next(stop); nextStop != bus_stops.end(); ++stop, ++nextStop) {
+        d += CalculateDistanceBetweenStops(**stop, **nextStop);
+    }
+
+    if (!is_cyclic) {
+        for (auto stop = bus_stops.rbegin(), nextStop = next(stop); nextStop != bus_stops.rend(); ++stop, ++nextStop) {
+            d += CalculateDistanceBetweenStops(**stop, **nextStop);
+        }
+    }
+
+    return d;
 }
 
 size_t Bus::GetNumberOfStops() const {
@@ -50,18 +66,22 @@ void Bus::SetBusStops(vector<shared_ptr<Stop>> &&stops) {
     bus_stops = stops;
 }
 
-ostream& operator<<(ostream& os, Bus& bus) {
+ostream &operator<<(ostream &os, Bus &bus) {
     os << "Bus "
        << bus.GetBusNumber()
        << ": "
        << bus.GetNumberOfStops()
        << " stops on route, "
        << bus.GetNumberOfUniqueStops()
-       << " unique stops, "
+       << " unique stops, ";
+
+    auto distance = bus.CalculateDistance();
+    os << distance.by_road
+       << " route length, "
        << setprecision(6)
        << fixed
-       << bus.CalculateRouteDistance()
-       << " route length"
+       << distance.by_road / distance.between_coordinates
+       << " curvature"
        << "\n";
 
     return os;

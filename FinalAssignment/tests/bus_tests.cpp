@@ -14,49 +14,6 @@ TEST_CASE("Bus tests") {
     auto biryulyovo_tovarnaya_ptr = make_shared<Stop>("Biryulyovo Tovarnaya", 55.592028, 37.653656);
     auto biryulyovo_passazhirskaya_ptr = make_shared<Stop>("Biryulyovo Passazhirskaya", 55.580999, 37.659164);
 
-    SECTION("operator<< tests") {
-        ostringstream oss;
-        ostringstream output_oss;
-        vector<shared_ptr<Stop>> stops_256 = {biryulyovo_zapadnoye_ptr,
-                                              biryusinka_ptr,
-                                              universam_ptr,
-                                              biryulyovo_tovarnaya_ptr,
-                                              biryulyovo_passazhirskaya_ptr,
-                                              biryulyovo_zapadnoye_ptr
-        };
-
-        Bus b256("256");
-        b256.SetIsCyclic(true);
-        b256.SetBusStops(move(stops_256));
-        oss << b256;
-        output_oss << "Bus 256: 6 stops on route, 5 unique stops, 4371.017264 route length" << "\n";
-
-        vector<shared_ptr<Stop>> stops_750 = {tolstopaltsevo_ptr,
-                                              marushkino_ptr,
-                                              rasskazovka_ptr
-        };
-        const string bus_number_750 = "750";
-        Bus b750("750");
-        b750.SetBusStops(move(stops_750));
-        oss << b750;
-        output_oss << "Bus 750: 5 stops on route, 3 unique stops, 20939.483047 route length" << "\n";
-
-        vector<shared_ptr<Stop>> dummies = {marushkino_ptr,
-                                            marushkino_ptr,
-                                            marushkino_ptr,
-                                            marushkino_ptr,
-                                            marushkino_ptr
-        };
-
-
-        Bus dummy("dummy");
-
-        dummy.SetBusStops(move(dummies));
-        oss << dummy;
-        output_oss << "Bus dummy: 9 stops on route, 1 unique stops, 0.000000 route length" << "\n";
-
-        REQUIRE(oss.str() == output_oss.str());
-    }
     SECTION("CalculateRouteDistance tests") {
         Bus b256("256");
         vector<shared_ptr<Stop>> stops256 = {

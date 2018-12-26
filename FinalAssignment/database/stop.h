@@ -5,6 +5,8 @@
 #include <cmath>
 #include <set>
 #include <memory>
+#include <utility>
+#include <unordered_map>
 #include "global.h"
 #include "bus.h"
 
@@ -18,27 +20,34 @@ class Bus;
 //};
 
 struct Coordinates {
+    Coordinates() = default;
+    Coordinates(double, double);
     double latitude;
     double longitude;
 };
 
 std::istream &operator>>(std::istream &, Coordinates &);
 
+struct Distance {
+    double between_coordinates = 0.0;
+    uint by_road = 0;
+    Distance &operator+=(const Distance &);
+};
+
 class Stop {
 public:
     Stop() = default;
-
     Stop(std::string &&);
-
     Stop(std::string &&, double, double);
 
 public:
     const std::string GetName() const;
-
     void SetCoordinates(Coordinates &&);
-
     const Coordinates &GetCoordinates() const;
-
+public:
+    void AddDistanceToAnotherStop(const std::string &, uint);
+    void TryAddDistanceToAnotherStop(const std::string &, uint);
+    uint GetDistanceToStop(const std::string &) const;
 public:
     void AddBus(const std::string&);
     const std::set<std::string>& GetBuses() const;
@@ -46,8 +55,10 @@ private:
     std::set<std::string> buses;
     std::string stop_name;
     Coordinates coordinates;
+    std::unordered_map<std::string, uint> distances_to_stops;
 };
 
 std::ostream& operator<<(std::ostream &, Stop &);
 
-double CalculateDistanceBetweenTwoStops(const Coordinates &, const Coordinates &);
+double CalculateDistanceBetweenCoordinates(const Coordinates &, const Coordinates &);
+Distance CalculateDistanceBetweenStops(const Stop &, const Stop &);

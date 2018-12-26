@@ -1,5 +1,6 @@
 #include "database.h"
-#include "algorithm"
+#include <algorithm>
+#include <utility>
 #include "parse.h"
 
 using namespace std;
@@ -82,13 +83,36 @@ void Database::InsertBusItinerary(istream &is) {
     bus_ptr->SetBusStops(move(stops));
 };
 
+pair<string_view, uint> ParseDistanceToStop(string_view sv) {
+    auto m_char_pos = sv.find('m');
+    return {sv.substr(m_char_pos + 5, sv.size()), stoul(string(sv.substr(0, m_char_pos)))};
+}
 
 void Database::InsertStop(istream &is) {
     string stop_name;
     getline(is, stop_name, ':');
     auto stop_ptr = GetStop(stop_name);
-    Coordinates coords;
-    is >> coords;
 
+    // get the rest of the input
+    string stop_info_string;
+    getline(is, stop_info_string);
+
+    // split the string by ,
+    auto stop_info = SplitBy(stop_info_string, ',');
+
+    // first two elements must be latitude and longitude
+    double latitude = stod(string(stop_info[0]));
+    double longitude = stod(string(stop_info[1]));
+
+    Coordinates coords(latitude, longitude);
     stop_ptr->SetCoordinates(move(coords));
+
+    // the rest, if any, must be distance
+    for(auto it = stop_info.begin() + 2; it != stop_info.end(); ++it) {
+        auto distance_to_stop = ParseDistanceToStop(*it);
+        auto another_stop = GetStop(distance_to_stop.first);
+
+        stop_ptr->AddDistanceToAnotherStop(another_stop->GetName(), distance_to_stop.second);
+        another_stop->TryAddDistanceToAnotherStop(stop_ptr->GetName(), distance_to_stop.second);
+    }
 };
