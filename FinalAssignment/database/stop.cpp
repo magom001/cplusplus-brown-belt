@@ -1,4 +1,5 @@
 #include "stop.h"
+#include "parse.h"
 #include <iterator>
 
 using namespace std;
@@ -24,8 +25,8 @@ void Stop::SetCoordinates(Coordinates &&coords) {
     coordinates = coords;
 }
 
-void Stop::AddBus(const string& bus_number) {
-    buses.insert(bus_number) ;
+void Stop::AddBus(string_view bus_number) {
+    this->buses.insert(string(Strip(bus_number)));
 }
 
 void Stop::AddDistanceToAnotherStop(const std::string &stop_name, uint distance) {

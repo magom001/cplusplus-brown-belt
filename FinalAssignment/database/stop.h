@@ -4,9 +4,11 @@
 #include <iostream>
 #include <cmath>
 #include <set>
+#include <vector>
 #include <memory>
 #include <utility>
 #include <unordered_map>
+#include <set>
 #include "global.h"
 #include "bus.h"
 
@@ -49,7 +51,7 @@ public:
     void TryAddDistanceToAnotherStop(const std::string &, uint);
     uint GetDistanceToStop(const std::string &) const;
 public:
-    void AddBus(const std::string&);
+    void AddBus(std::string_view);
     const std::set<std::string>& GetBuses() const;
 private:
     std::set<std::string> buses;

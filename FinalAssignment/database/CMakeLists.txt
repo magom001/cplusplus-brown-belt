@@ -8,13 +8,15 @@ set(HEADER_FILES
         global.h
         stop.h
         program_runner.h
-        )
+        json.h
+        response.h)
 
 set(SOURCE_FILES
         database.cpp
         bus.cpp
         parse.cpp
         stop.cpp
-        )
+        json.cpp
+        response.cpp json_runner.h)
 
 add_library(database STATIC ${SOURCE_FILES} ${HEADER_FILES})
