@@ -60,3 +60,47 @@ void ResponseBus::Stringify(std::ostream &os) {
     os << unique_stop_count;
     os << '}';
 }
+
+void ResponseRoute::Stringify(std::ostream &os) {
+    os << '{';
+    os << '"' << "request_id" << '"' << ':';
+    os << request_id << ',';
+    os << '"' << "total_time" << '"' << ':';
+    os << total_time << ',';
+    os << '"' << "items" << '"' << ':';
+    os << '[';
+    for (auto item = items.begin(); item != items.end(); ++item) {
+        os << '{';
+        os << '"' << "type" << '"' << ':';
+        if ((*item).edge_type == Graph::EDGE_TYPE::BUS) {
+            os << '"' << "Bus" << '"' << ',';
+            os << '"' << "bus" << '"' << ':';
+            os << '"' << (*item).name << '"' << ',';
+            os << '"' << "span_count" << '"' << ':';
+            os << (*item).span << ',';
+        } else if ((*item).edge_type == Graph::EDGE_TYPE::WAIT) {
+            os << '"' << "Wait" << '"' << ',';
+            os << '"' << "stop_name" << '"' << ':';
+            os << '"' << (*item).name << '"' << ',';
+        }
+        os << '"' << "time" << '"' << ':';
+        os << (*item).time;
+        os << '}';
+        if (item != prev(items.end())) {
+            os << ',';
+        }
+    }
+    os << ']';
+    os << '}';
+}
+
+ResponseRoute::ResponseRoute(size_t request_id, Minutes total_time, Items items)
+        : Response(request_id),
+          total_time(total_time),
+          items(move(items)) {}
+
+Item::Item(Graph::EDGE_TYPE edge_type, std::string name, Minutes time, size_t span)
+        : edge_type(edge_type),
+          name(move(name)),
+          time(time),
+          span(span) {}

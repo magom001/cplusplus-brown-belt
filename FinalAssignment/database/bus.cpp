@@ -66,6 +66,10 @@ void Bus::SetBusStops(vector<shared_ptr<Stop>> &&stops) {
     bus_stops = stops;
 }
 
+std::vector<std::shared_ptr<Stop>> &Bus::GetBusStops() {
+    return bus_stops;
+}
+
 ostream &operator<<(ostream &os, Bus &bus) {
     os << "Bus "
        << bus.GetBusNumber()

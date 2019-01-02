@@ -53,14 +53,19 @@ public:
 public:
     void AddBus(std::string_view);
     const std::set<std::string>& GetBuses() const;
+public:
+    void SetIndex(size_t);
+    size_t GetIndex() const;
 private:
     std::set<std::string> buses;
     std::string stop_name;
     Coordinates coordinates;
     std::unordered_map<std::string, uint> distances_to_stops;
+    size_t index;
 };
 
 std::ostream& operator<<(std::ostream &, Stop &);
 
 double CalculateDistanceBetweenCoordinates(const Coordinates &, const Coordinates &);
 Distance CalculateDistanceBetweenStops(const Stop &, const Stop &);
+Distance CalculateDistanceBetweenStops(const std::shared_ptr<Stop> s1, const std::shared_ptr<Stop> s2);

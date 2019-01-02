@@ -10,6 +10,15 @@
 #include "stop.h"
 #include "response.h"
 #include "json.h"
+#include "graph.h"
+#include "router.h"
+
+struct RoutingSettings {
+    RoutingSettings() = default;
+    RoutingSettings(double, double);
+    double bus_wait_time;
+    double bus_velocity;
+};
 
 class Database {
 public:
@@ -24,6 +33,15 @@ public:
     std::shared_ptr<Stop> GetStop(std::string_view stop_name);
     size_t GetNumberOfStops() const;
     size_t GetNumberOfBusRoutes() const;
+public:
+    void SetRoutingSettings(RoutingSettings&&);
+    void BuildGraph();
+    const std::shared_ptr<Graph::Router<double>> GetRouter() const;
+    const std::shared_ptr<Graph::DirectedWeightedGraph<double>> GetGraph() const;
+private:
+    std::shared_ptr<Graph::DirectedWeightedGraph<double>> dwg;
+    std::shared_ptr<Graph::Router<double>> router;
+    RoutingSettings routing_settings;
 private:
     template<typename T>
     void InsertBus(std::string&& bus_number, std::vector<T>&& stop_names, bool is_roundtrip) {
@@ -43,6 +61,7 @@ private:
     void HandleBaseBusRequest(std::map<std::string, Json::Node> &&);
     std::shared_ptr<Response> HandleStatStopRequest(std::map<std::string, Json::Node> &&) const;
     std::shared_ptr<Response> HandleStatBusRequest(std::map<std::string, Json::Node> &&) const;
+    std::shared_ptr<Response> HandleRouteRequest(std::map<std::string, Json::Node> &&) const;
     std::shared_ptr<Bus> GetBus(std::string_view bus_number);
     std::unordered_map<std::string, std::shared_ptr<Bus>> bus_routes;
     std::unordered_map<std::string, std::shared_ptr<Stop>> stops;

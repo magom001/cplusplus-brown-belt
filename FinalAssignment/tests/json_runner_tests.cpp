@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 #include <sstream>
+#include <fstream>
+#include <string>
 #include "json_runner.h"
 
 using namespace std;
@@ -170,10 +172,10 @@ TEST_CASE("JsonRunner tests") {
 
         const string expected_output = R"response([{"route_length":5950,"request_id":1965312327,"curvature":1.36124,"stop_count":6,"unique_stop_count":5},{"route_length":27600,"request_id":519139350,"curvature":1.31808,"stop_count":5,"unique_stop_count":3},{"request_id":194217464,"error_message":"not found"},{"request_id":746888088,"error_message":"not found"},{"buses":[],"request_id":65100610},{"buses":["256","828"],"request_id":1042838872}])response";
 
-//        stringstream output;
-//        Json::Start(ss, output);
-//
-//        REQUIRE(output.str() == expected_output);
+        stringstream output;
+        Json::Start(ss, output);
+
+        REQUIRE(output.str() == expected_output);
     }
 
     // {"base_requests":
@@ -210,5 +212,15 @@ TEST_CASE("JsonRunner tests") {
         Json::Start(ss, output);
     }
 
+    SECTION("testing example 1 json") {
+        string filename = "../../tests/part_e_example1.json";
+        ifstream fs(filename);
+
+        if (!fs.is_open()) {
+            cout << "Failed to open file" << endl;
+        }
+
+        Json::Start(fs, cout);
+    }
 
 }

@@ -9,7 +9,10 @@ set(HEADER_FILES
         stop.h
         program_runner.h
         json.h
-        response.h)
+        response.h
+        graph.h
+        router.h
+        json_runner.h)
 
 set(SOURCE_FILES
         database.cpp
@@ -17,6 +20,6 @@ set(SOURCE_FILES
         parse.cpp
         stop.cpp
         json.cpp
-        response.cpp json_runner.h)
+        response.cpp)
 
 add_library(database STATIC ${SOURCE_FILES} ${HEADER_FILES})

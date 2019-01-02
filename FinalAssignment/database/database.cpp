@@ -50,6 +50,11 @@ shared_ptr<Stop> Database::GetStop(string_view stop_name) {
         string name(Strip(stop_name));
 
         auto stop_ptr = make_shared<Stop>(move(name));
+
+        // Need to number all stops sequentially in order to be able
+        // to construct a graph
+        stop_ptr->SetIndex(this->GetNumberOfStops());
+
         stops[stop_ptr->GetName()] = stop_ptr;
 
         return stop_ptr;
@@ -126,12 +131,14 @@ vector<shared_ptr<Response>> Database::HandleStatRequests(vector<Json::Node> req
 
     for (const auto &r: requests) {
         auto request_body = r.AsMap();
-        const auto& type = request_body.at("type").AsString();
+        const auto &type = request_body.at("type").AsString();
 
         if (type == "Stop") {
             responses.push_back(HandleStatStopRequest(move(request_body)));
         } else if (type == "Bus") {
             responses.push_back(HandleStatBusRequest(move(request_body)));
+        } else if (type == "Route") {
+            responses.push_back(HandleRouteRequest(move(request_body)));
         }
     }
 
@@ -199,8 +206,113 @@ shared_ptr<Response> Database::HandleStatBusRequest(map<string, Json::Node> &&re
         Distance d = bus_ptr->CalculateDistance();
         auto stop_count = bus_ptr->GetNumberOfStops();
         auto unique_stop_count = bus_ptr->GetNumberOfUniqueStops();
-        return make_shared<ResponseBus>(request.at("id").AsInt(), d.by_road, d.by_road/d.between_coordinates, stop_count, unique_stop_count);
+        return make_shared<ResponseBus>(request.at("id").AsInt(), d.by_road, d.by_road / d.between_coordinates,
+                                        stop_count, unique_stop_count);
     } else {
         return make_shared<ResponseFailed>(request.at("id").AsInt());
     }
-};
+}
+
+shared_ptr<Response> Database::HandleRouteRequest(map<string, Json::Node> &&request) const {
+    auto fromString = request.at("from").AsString();
+    auto toString = request.at("to").AsString();
+    auto from = TryGetStop(request.at("from").AsString())->GetIndex();
+    auto to = TryGetStop(request.at("to").AsString())->GetIndex();
+
+    if (auto route = GetRouter()->BuildRoute(from, to)) {
+        vector<Item> items;
+        items.reserve(route->edge_count);
+        for (size_t x = 0; x < route->edge_count; ++x) {
+            auto edge_id = GetRouter()->GetRouteEdge(route->id, x);
+            auto edge = GetGraph()->GetEdge(edge_id);
+
+            items.emplace_back(edge.edge_type, edge.name, edge.weight, edge.span);
+        }
+
+        return make_shared<ResponseRoute>(request.at("id").AsInt(), route->weight, items);
+    } else {
+        return make_shared<ResponseFailed>(request.at("id").AsInt());
+    }
+}
+
+void Database::SetRoutingSettings(RoutingSettings &&rs) {
+    routing_settings = rs;
+}
+
+void Database::BuildGraph() {
+    // Graph::DirectedWeightedGraph<double> dwg(GetNumberOfStops() * 2);
+    auto dwg = make_shared<Graph::DirectedWeightedGraph<double>>(GetNumberOfStops() * 2);
+    for (auto &stop: stops) {
+        // cout << stop.second->GetIndex() << " - " << stop.second->GetIndex() + GetNumberOfStops() << endl;
+
+        dwg->AddEdge({stop.second->GetIndex(),
+                      stop.second->GetIndex() + GetNumberOfStops(),
+                      routing_settings.bus_wait_time,
+                      Graph::EDGE_TYPE::WAIT,
+                      stop.second->GetName()});
+    }
+
+    for (auto &bus: bus_routes) {
+        for (auto stop_it = bus.second->GetBusStops().begin();
+             next(stop_it) != bus.second->GetBusStops().end(); ++stop_it) {
+            size_t span = 0;
+
+            Distance d;
+
+            for (auto next_stop_it = next(stop_it); next_stop_it != bus.second->GetBusStops().end(); ++next_stop_it) {
+                d += CalculateDistanceBetweenStops(*prev(next_stop_it), *next_stop_it);
+
+                dwg->AddEdge({
+                                     (*stop_it)->GetIndex() + GetNumberOfStops(),
+                                     (*next_stop_it)->GetIndex(),
+                                     d.by_road / routing_settings.bus_velocity,
+                                     Graph::EDGE_TYPE::BUS,
+                                     bus.second->GetBusNumber(),
+                                     ++span
+                             });
+            }
+        }
+        // TODO: REFACTOR
+        if (!bus.second->IsCyclic()) {
+            for (auto stop_it = bus.second->GetBusStops().rbegin();
+                 next(stop_it) != bus.second->GetBusStops().rend(); ++stop_it) {
+                size_t span = 0;
+
+                Distance d;
+
+                for (auto next_stop_it = next(stop_it);
+                     next_stop_it != bus.second->GetBusStops().rend(); ++next_stop_it) {
+                    d += CalculateDistanceBetweenStops(*prev(next_stop_it), *next_stop_it);
+
+                    dwg->AddEdge({
+                                         (*stop_it)->GetIndex() + GetNumberOfStops(),
+                                         (*next_stop_it)->GetIndex(),
+                                         d.by_road / routing_settings.bus_velocity,
+                                         Graph::EDGE_TYPE::BUS,
+                                         bus.second->GetBusNumber(),
+                                         ++span
+                                 });
+                }
+            }
+        }
+    }
+
+    this->dwg = move(dwg);
+
+    auto router = make_shared<Graph::Router<double>>(*(this->dwg.get()));
+
+    this->router = move(router);
+}
+
+const shared_ptr<Graph::Router<double>> Database::GetRouter() const {
+    return this->router;
+}
+
+const shared_ptr<Graph::DirectedWeightedGraph<double>> Database::GetGraph() const {
+    return this->dwg;
+}
+
+
+RoutingSettings::RoutingSettings(double bus_wait_time, double bus_velocity)
+        : bus_wait_time(bus_wait_time),
+          bus_velocity(bus_velocity * 1000.0 / 60.0) {}

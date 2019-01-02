@@ -49,6 +49,14 @@ const std::set<std::string>& Stop::GetBuses() const {
     return buses;
 }
 
+void Stop::SetIndex(size_t i) {
+    index = i;
+}
+
+size_t Stop::GetIndex() const {
+    return index;
+}
+
 Coordinates::Coordinates(double latitude, double longitude): latitude(latitude), longitude(longitude) {};
 
 istream &operator>>(istream &is, Coordinates &coordinates) {
@@ -85,4 +93,8 @@ double CalculateDistanceBetweenCoordinates(const Coordinates &pt1, const Coordin
 
 Distance CalculateDistanceBetweenStops(const Stop &s1, const Stop &s2) {
     return {CalculateDistanceBetweenCoordinates(s1.GetCoordinates(), s2.GetCoordinates()), s1.GetDistanceToStop(s2.GetName())};
+}
+
+Distance CalculateDistanceBetweenStops(const shared_ptr<Stop> s1, const shared_ptr<Stop> s2) {
+    return {CalculateDistanceBetweenCoordinates(s1->GetCoordinates(), s2->GetCoordinates()), s1->GetDistanceToStop(s2->GetName())};
 }

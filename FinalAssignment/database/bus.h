@@ -18,6 +18,7 @@ public:
     double CalculateRouteDistance() const;
     const Distance CalculateDistance() const;
     void SetBusStops(std::vector<std::shared_ptr<Stop>>&& stops);
+    std::vector<std::shared_ptr<Stop>>& GetBusStops();
     const bool IsCyclic() const;
     void SetIsCyclic(bool flag);
     size_t GetNumberOfStops() const;
